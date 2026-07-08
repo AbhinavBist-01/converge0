@@ -16,8 +16,11 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
+    "@google/genai": "^2.10.0",
     "@types/express": "^5.0.6",
     "express": "^5.2.1",
+    "openai": "^6.45.0",
     "zod": "^4.4.3"
   }
 }
