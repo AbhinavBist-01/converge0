@@ -25,21 +25,23 @@ export const ModelAnswerSchema = z.object({
 export type ModelAnswer = z.infer<typeof ModelAnswerSchema>;
 
 export const JudgeResultSchema = z.object({
-  winner: z
-    .enum(["openai", "anthropic", "gemini", "tie"])
-    .describe(
-      "The provider of the model that won the comparison, or 'tie' if there was no clear winner.",
-    ),
-  reason: z
-    .string()
-    .max(100)
-    .describe(
-      "A brief explanation of why the winner was chosen, limited to 100 characters.",
-    ),
   finalAnswer: z
     .string()
     .max(1000)
     .describe("The final answer after judging, limited to 1000 characters."),
+  tokens: z.object({
+    input: z.number().describe("The number of input tokens used."),
+    output: z.number().describe("The number of output tokens used."),
+  }),
 });
 
 export type JudgeResult = z.infer<typeof JudgeResultSchema>;
+
+export const userQuerySchema = z.object({
+  query: z
+    .string()
+    .max(1000)
+    .describe("The user's query, limited to 1000 characters."),
+});
+
+export type UserQuery = z.infer<typeof userQuerySchema>;

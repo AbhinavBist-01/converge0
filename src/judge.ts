@@ -3,7 +3,7 @@ import type { JudgeResult, ModelAnswer } from "./types.js";
 
 const claude = new Anthropic();
 
-async function judgeFinalAnswer(
+export async function judgeFinalAnswer(
   question: string,
   answers: ModelAnswer[],
 ): Promise<JudgeResult> {
@@ -52,10 +52,20 @@ async function judgeFinalAnswer(
     `;
 
   const stream = await claude.messages.stream({
-    model: "claude-sonnet-4-5",
+    model: "claude-sonnet-4-5", // or "claude-sonnet-5" for the latest
     max_tokens: 1000,
-    messages: [{ role: "user", content: SYSTEM_PROMPT }],
-    stream: true,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: question }],
   });
-  return {};
+
+  const message = await stream.finalMessage();
+
+  return {
+    finalAnswer:
+      message.content[0]?.type === "text" ? message.content[0].text : "",
+    tokens: {
+      input: message.usage.input_tokens,
+      output: message.usage.output_tokens,
+    },
+  };
 }
