@@ -1,39 +1,64 @@
 import "dotenv/config";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import express from "express";
-import type { UserQuery } from "./types.js";
 import { askClaude } from "./providers/claude.js";
 import { askOpenAI } from "./providers/openai.js";
 import { askGemini } from "./providers/gemini.js";
 import { judgeFinalAnswer } from "./judge.js";
 
-const PORT = process.env.PORT;
-
-const app = express();
-app.use(express.json());
-
-async function main(query: UserQuery): Promise<void> {
+async function main(): Promise<void> {
   const rl = createInterface({ input, output });
-  const userQuery = await rl.question("Enter your query: \n\n");
-  rl.close();
 
-  const modelAnswers = await Promise.all([
-    askClaude(userQuery),
-    askOpenAI(userQuery),
-    askGemini(userQuery),
-  ]);
+  try {
+    while (true) {
+      const userQuery = await rl.question(
+        "\nEnter your query (type 'exit' to quit): ",
+      );
+      const trimmedQuery = userQuery.trim();
 
-  const finalAnswerFromJudge = await judgeFinalAnswer(userQuery, modelAnswers);
+      if (trimmedQuery.toLowerCase() === "exit") {
+        break;
+      }
 
-  console.log(
-    `Best Answer: ${finalAnswerFromJudge.finalAnswer} \n\n Tokens Used: Input - ${finalAnswerFromJudge.tokens.input}, Output - ${finalAnswerFromJudge.tokens.output}`,
-  );
+      if (trimmedQuery === "") {
+        console.log("Query cannot be empty. Please enter a valid question.");
+        continue;
+      }
 
-  console.log(`Query received: ${userQuery}`);
+      console.log("\nFetching answers from providers...");
+      const modelAnswers = await Promise.all([
+        askOpenAI(trimmedQuery),
+        askGemini(trimmedQuery),
+      ]);
+
+      // Print warning if any provider failed
+      for (const ans of modelAnswers) {
+        if (!ans.success) {
+          console.warn(
+            `[Warning] Provider ${ans.provider} failed: ${ans.error}`,
+          );
+        }
+      }
+
+      try {
+        console.log("Judging the best answer...");
+        const finalAnswerFromJudge = await judgeFinalAnswer(
+          trimmedQuery,
+          modelAnswers,
+        );
+
+        console.log(
+          `\nBest Answer: ${finalAnswerFromJudge.finalAnswer} \n\nTokens Used: Input - ${finalAnswerFromJudge.tokens.input}, Output - ${finalAnswerFromJudge.tokens.output}`,
+        );
+      } catch (err: any) {
+        console.error(`\n[Error] Judging failed: ${err.message}`);
+      }
+    }
+  } finally {
+    rl.close();
+  }
 }
-main({ query: "" });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+main().catch((err) => {
+  console.error("Fatal error:", err);
 });
