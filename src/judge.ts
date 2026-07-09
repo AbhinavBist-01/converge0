@@ -1,7 +1,9 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import type { JudgeResult, ModelAnswer } from "./types.js";
 
-const claude = new Anthropic();
+const claude = new Anthropic({
+  apiKey: process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || "",
+});
 
 export async function judgeFinalAnswer(
   question: string,

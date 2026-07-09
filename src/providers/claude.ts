@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ModelAnswer } from "../types.js";
-const client = new Anthropic();
+const client = new Anthropic({
+  apiKey: process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || "",
+});
 
 export async function askClaude(question: string): Promise<ModelAnswer> {
   const startTime = Date.now();
